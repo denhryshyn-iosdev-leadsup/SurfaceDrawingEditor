@@ -17,10 +17,12 @@ enum FontRegistrar {
         
         let bundle = Bundle.module
         guard let urls = bundle.urls(forResourcesWithExtension: "otf", subdirectory: nil)
-            ?? bundle.urls(forResourcesWithExtension: "ttf", subdirectory: nil)
+                ?? bundle.urls(forResourcesWithExtension: "ttf", subdirectory: nil)
         else { return }
         
         urls.forEach { url in
+            let fontName = url.deletingPathExtension().lastPathComponent
+            guard UIFont(name: fontName, size: 12) == nil else { return } // уже зарегистрирован
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }
     }

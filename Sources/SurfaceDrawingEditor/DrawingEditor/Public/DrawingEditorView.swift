@@ -88,7 +88,6 @@ public struct DrawingEditorView: View {
                         .tint(.white)
                         .scaleEffect(1.2)
                 }
-                .ignoresSafeArea()
             }
         }
         .onChange(of: vm.hasEdits) { _, newValue in
