@@ -79,6 +79,7 @@ public struct DrawingEditorView: View {
             onContentFrameChanged: { contentFrame = $0 },
             zoomController: zoomController
         )
+        .clipped()
         .overlay {
             if vm.isProcessing || vm.isRenderingOverlay {
                 ZStack {
