@@ -90,6 +90,7 @@ public struct DrawingEditorView: View {
                         .scaleEffect(1.2)
                 }
                 .frame(width: contentFrame.width, height: contentFrame.height)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
             }
         }
         .onChange(of: vm.hasEdits) { _, newValue in
