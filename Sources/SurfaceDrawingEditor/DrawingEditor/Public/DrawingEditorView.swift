@@ -89,6 +89,7 @@ public struct DrawingEditorView: View {
                         .tint(.white)
                         .scaleEffect(1.2)
                 }
+                .frame(width: contentFrame.width, height: contentFrame.height)
             }
         }
         .onChange(of: vm.hasEdits) { _, newValue in

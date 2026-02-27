@@ -34,7 +34,15 @@ public final class DrawingEditorViewModel: ObservableObject {
     public var currentWidth: CGFloat { currentTool == .brush ? brushWidth : eraserWidth }
     public var canUndo: Bool  { !strokes.isEmpty }
     public var canRedo: Bool  { !redoStack.isEmpty }
-    public var hasEdits: Bool { !strokes.isEmpty || autoDetectedSurface != nil }
+    public var hasEdits: Bool {
+        switch mode {
+        case .manualOnly:
+            return !strokes.isEmpty
+        case .autoDetect:
+            let hasBrushStrokes = strokes.contains { $0.tool == .brush }
+            return hasBrushStrokes || autoDetectedSurface != nil
+        }
+    }
 
     public let brushColor = UIColor(red: 190/255, green: 190/255, blue: 190/255, alpha: 1)
     
