@@ -208,6 +208,7 @@ public final class DrawingEditorViewModel: ObservableObject {
             
             ctx.setLineCap(.round)
             ctx.setLineJoin(.round)
+            ctx.setShouldAntialias(false)
             
             for stroke in strokes {
                 guard stroke.points.count > 1 else { continue }
@@ -232,10 +233,61 @@ public final class DrawingEditorViewModel: ObservableObject {
             guard let data = ctx.data else { return false }
             let bytes = data.bindMemory(to: UInt8.self, capacity: bw * bh * 4)
             
-            for i in stride(from: 3, to: bw * bh * 4, by: 4) {
-                if bytes[i] > 10 { return true }
+            switch mode {
+            case .manualOnly:
+                for i in stride(from: 3, to: bw * bh * 4, by: 4) {
+                    if bytes[i] > 2 { return true }
+                }
+                return false
+                
+            case .autoDetect:
+                guard let s = surface, hasAutoOverlay else {
+                    for i in stride(from: 3, to: bw * bh * 4, by: 4) {
+                        if bytes[i] > 2 { return true }
+                    }
+                    return false
+                }
+                
+                guard let eraserCtx = CGContext(
+                    data: nil,
+                    width: bw, height: bh,
+                    bitsPerComponent: 8, bytesPerRow: bw,
+                    space: CGColorSpaceCreateDeviceGray(),
+                    bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue)
+                ) else { return true }
+                
+                eraserCtx.setFillColor(gray: 0, alpha: 1)
+                eraserCtx.fill(CGRect(x: 0, y: 0, width: bw, height: bh))
+                eraserCtx.setShouldAntialias(false)
+                eraserCtx.setStrokeColor(gray: 1, alpha: 1)
+                eraserCtx.setLineCap(.square)
+                eraserCtx.setLineJoin(.miter)
+                
+                for stroke in strokes where stroke.tool == .eraser {
+                    guard stroke.points.count > 1 else { continue }
+                    let scaledWidth = stroke.brushWidth * (scaleX + scaleY) / 2 * 1.15
+                    eraserCtx.setLineWidth(scaledWidth)
+                    let pts = stroke.points.map {
+                        CGPoint(x: $0.x * scaleX, y: CGFloat(bh) - $0.y * scaleY)
+                    }
+                    eraserCtx.move(to: pts[0])
+                    pts.dropFirst().forEach { eraserCtx.addLine(to: $0) }
+                    eraserCtx.strokePath()
+                }
+                
+                guard let eraserData = eraserCtx.data else { return true }
+                let eraserBytes = eraserData.bindMemory(to: UInt8.self, capacity: bw * bh)
+                
+                for i in stride(from: 3, to: bw * bh * 4, by: 4) {
+                    if bytes[i] > 2 { return true }
+                }
+                
+                let eraserTouchedMask = s.maskIndices.contains { eraserBytes[$0] > 127 }
+                if !eraserTouchedMask { return true }
+                
+                let autoFullyErased = s.maskIndices.allSatisfy { eraserBytes[$0] > 127 }
+                return !autoFullyErased
             }
-            return false
         }.value
     }
     
