@@ -36,13 +36,14 @@ public final class DrawingEditorViewModel: ObservableObject {
     public var canRedo: Bool  { !redoStack.isEmpty }
     
     public var hasEdits: Bool {
+        let hasBrushStrokes = strokes.contains { $0.tool == .brush }
+        let hasEraserOnly = !strokes.isEmpty && !hasBrushStrokes
         switch mode {
         case .manualOnly:
             return !strokes.isEmpty
         case .autoDetect:
-            let hasBrushStrokes = strokes.contains { $0.tool == .brush }
-            let hasVisibleOverlay = autoOverlayImage != nil
-            return hasBrushStrokes || hasVisibleOverlay
+            if hasEraserOnly { return false }
+            return hasBrushStrokes || autoOverlayImage != nil
         }
     }
 
@@ -123,10 +124,6 @@ public final class DrawingEditorViewModel: ObservableObject {
     public func addStroke(_ stroke: DrawingStroke) {
         strokes.append(stroke)
         redoStack.removeAll()
-        if stroke.tool == .eraser {
-            let hasBrush = strokes.contains { $0.tool == .brush }
-            if !hasBrush { autoOverlayImage = nil }
-        }
     }
     
     public func undo() { if let s = strokes.popLast() { redoStack.append(s) } }
