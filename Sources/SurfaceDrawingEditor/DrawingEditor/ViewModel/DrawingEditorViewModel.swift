@@ -265,7 +265,10 @@ public final class DrawingEditorViewModel: ObservableObject {
                     return true
                 }
                 
-                let autoFullyErased = s.maskIndices.allSatisfy { eraserBytes[$0] > 127 }
+                let erasedCount = s.maskIndices.filter { eraserBytes[$0] > 127 }.count
+                let totalCount = s.maskIndices.count
+                let erasedPercent = Float(erasedCount) / Float(totalCount)
+                let autoFullyErased = erasedPercent >= 0.95
                 return !autoFullyErased
             }
         }.value
