@@ -223,11 +223,17 @@ public final class DrawingEditorViewModel: ObservableObject {
                 return (0..<(bw * bh)).contains { bytes[$0] > 127 }
                 
             case .autoDetect:
-                if let s = surface {
-                    let autoFullyErased = s.maskIndices.allSatisfy { bytes[$0] <= 127 }
-                    if !autoFullyErased { return true }
+                let hasBrushPixels = (0..<(bw * bh)).contains { bytes[$0] > 127 }
+                
+                if hasBrushPixels { return true }
+                
+                guard let s = surface, hasAutoOverlay else { return false }
+                
+                let eraserStrokes = strokes.filter { $0.tool == .eraser }
+                guard !eraserStrokes.isEmpty else {
+                    return true
                 }
-                return hasAutoOverlay ? false : (0..<(bw * bh)).contains { bytes[$0] > 127 }
+                return !s.maskIndices.allSatisfy { bytes[$0] <= 127 }
             }
         }.value
     }
