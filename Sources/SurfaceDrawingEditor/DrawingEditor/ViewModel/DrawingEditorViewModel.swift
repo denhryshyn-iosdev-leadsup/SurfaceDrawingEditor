@@ -132,74 +132,83 @@ public final class DrawingEditorViewModel: ObservableObject {
     // MARK: - Helper funcs
     
     private func recalculateHasEdits() {
-        let hasBrushStrokes = strokes.contains { $0.tool == .brush }
-        
-        switch mode {
-        case .manualOnly:
-            _hasEdits = hasBrushStrokes
-            
-        case .autoDetect:
-            if hasBrushStrokes {
-                _hasEdits = true
-                return
-            }
-            guard autoOverlayImage != nil, autoDetectedSurface != nil else {
+        guard !strokes.isEmpty else {
+            switch mode {
+            case .manualOnly:
                 _hasEdits = false
-                return
+            case .autoDetect:
+                _hasEdits = autoOverlayImage != nil
             }
-            
-            let currentStrokes = strokes
-            let surface = autoDetectedSurface!
-            let canvasSize = lastCanvasSize
-            
-            Task {
-                let fullyErased = await Self.checkFullyErased(
-                    eraserStrokes: currentStrokes.filter { $0.tool == .eraser },
-                    surface: surface,
-                    canvasSize: canvasSize
-                )
-                _hasEdits = !fullyErased
-            }
+            return
+        }
+        
+        let currentStrokes = strokes
+        let surface = autoDetectedSurface
+        let canvasSize = lastCanvasSize
+        let hasAutoOverlay = autoOverlayImage != nil
+        
+        Task {
+            let result = await Self.calculateHasEdits(
+                strokes: currentStrokes,
+                surface: surface,
+                canvasSize: canvasSize,
+                hasAutoOverlay: hasAutoOverlay,
+                mode: mode
+            )
+            _hasEdits = result
         }
     }
     
-    private static func checkFullyErased(
-        eraserStrokes: [DrawingStroke],
-        surface: DetectedSurface,
-        canvasSize: CGSize
+    private static func calculateHasEdits(
+        strokes: [DrawingStroke],
+        surface: DetectedSurface?,
+        canvasSize: CGSize,
+        hasAutoOverlay: Bool,
+        mode: DrawingEditorMode
     ) async -> Bool {
-        guard !eraserStrokes.isEmpty else { return false }
         guard !canvasSize.isEmpty else { return false }
         
         return await Task.detached(priority: .userInitiated) {
-            let mw = surface.maskWidth
-            let mh = surface.maskHeight
+            let bw: Int
+            let bh: Int
+            if let s = surface {
+                bw = s.maskWidth
+                bh = s.maskHeight
+            } else {
+                bw = 512
+                bh = 512
+            }
             
             guard let ctx = CGContext(
                 data: nil,
-                width: mw, height: mh,
-                bitsPerComponent: 8, bytesPerRow: mw,
+                width: bw, height: bh,
+                bitsPerComponent: 8, bytesPerRow: bw,
                 space: CGColorSpaceCreateDeviceGray(),
                 bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue)
             ) else { return false }
             
             ctx.setFillColor(gray: 0, alpha: 1)
-            ctx.fill(CGRect(x: 0, y: 0, width: mw, height: mh))
+            ctx.fill(CGRect(x: 0, y: 0, width: bw, height: bh))
             
-            let scaleX = CGFloat(mw) / canvasSize.width
-            let scaleY = CGFloat(mh) / canvasSize.height
+            let scaleX = CGFloat(bw) / canvasSize.width
+            let scaleY = CGFloat(bh) / canvasSize.height
             
-            ctx.setStrokeColor(gray: 1, alpha: 1)
             ctx.setLineCap(.round)
             ctx.setLineJoin(.round)
             
-            for stroke in eraserStrokes {
+            for stroke in strokes {
                 guard stroke.points.count > 1 else { continue }
                 let scaledWidth = stroke.brushWidth * (scaleX + scaleY) / 2
                 ctx.setLineWidth(scaledWidth)
                 
+                if stroke.tool == .brush {
+                    ctx.setStrokeColor(gray: 1, alpha: 1)
+                } else {
+                    ctx.setStrokeColor(gray: 0, alpha: 1)
+                }
+                
                 let pts = stroke.points.map {
-                    CGPoint(x: $0.x * scaleX, y: CGFloat(mh) - $0.y * scaleY)
+                    CGPoint(x: $0.x * scaleX, y: CGFloat(bh) - $0.y * scaleY)
                 }
                 ctx.move(to: pts[0])
                 pts.dropFirst().forEach { ctx.addLine(to: $0) }
@@ -207,9 +216,19 @@ public final class DrawingEditorViewModel: ObservableObject {
             }
             
             guard let data = ctx.data else { return false }
-            let bytes = data.bindMemory(to: UInt8.self, capacity: mw * mh)
+            let bytes = data.bindMemory(to: UInt8.self, capacity: bw * bh)
             
-            return surface.maskIndices.allSatisfy { bytes[$0] > 127 }
+            switch mode {
+            case .manualOnly:
+                return (0..<(bw * bh)).contains { bytes[$0] > 127 }
+                
+            case .autoDetect:
+                if let s = surface {
+                    let autoFullyErased = s.maskIndices.allSatisfy { bytes[$0] <= 127 }
+                    if !autoFullyErased { return true }
+                }
+                return hasAutoOverlay ? false : (0..<(bw * bh)).contains { bytes[$0] > 127 }
+            }
         }.value
     }
     
