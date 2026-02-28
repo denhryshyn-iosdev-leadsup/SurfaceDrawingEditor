@@ -132,20 +132,15 @@ public final class DrawingEditorViewModel: ObservableObject {
     // MARK: - Helper funcs
     
     private func recalculateHasEdits() {
-        guard !strokes.isEmpty else {
-            switch mode {
-            case .manualOnly:
-                _hasEdits = false
-            case .autoDetect:
-                _hasEdits = autoOverlayImage != nil
-            }
-            return
-        }
-        
         let currentStrokes = strokes
         let surface = autoDetectedSurface
         let canvasSize = lastCanvasSize
         let hasAutoOverlay = autoOverlayImage != nil
+        
+        if currentStrokes.isEmpty && !hasAutoOverlay {
+            _hasEdits = false
+            return
+        }
         
         Task {
             let result = await Self.calculateHasEdits(
@@ -182,16 +177,34 @@ public final class DrawingEditorViewModel: ObservableObject {
             guard let ctx = CGContext(
                 data: nil,
                 width: bw, height: bh,
-                bitsPerComponent: 8, bytesPerRow: bw,
-                space: CGColorSpaceCreateDeviceGray(),
-                bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue)
+                bitsPerComponent: 8, bytesPerRow: bw * 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             ) else { return false }
             
-            ctx.setFillColor(gray: 0, alpha: 1)
-            ctx.fill(CGRect(x: 0, y: 0, width: bw, height: bh))
+            ctx.clear(CGRect(x: 0, y: 0, width: bw, height: bh))
             
             let scaleX = CGFloat(bw) / canvasSize.width
             let scaleY = CGFloat(bh) / canvasSize.height
+            
+            if let s = surface, hasAutoOverlay {
+                let mw = s.maskWidth, mh = s.maskHeight
+                var bytes = [UInt8](repeating: 0, count: mw * mh)
+                for i in s.maskIndices { bytes[i] = 255 }
+                
+                if let provider = CGDataProvider(data: Data(bytes) as CFData),
+                   let maskCG = CGImage(
+                    width: mw, height: mh, bitsPerComponent: 8, bitsPerPixel: 8, bytesPerRow: mw,
+                    space: CGColorSpaceCreateDeviceGray(),
+                    bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+                    provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent) {
+                    ctx.saveGState()
+                    ctx.clip(to: CGRect(x: 0, y: 0, width: bw, height: bh), mask: maskCG)
+                    ctx.setFillColor(UIColor(red: 190/255, green: 190/255, blue: 190/255, alpha: 1).cgColor)
+                    ctx.fill(CGRect(x: 0, y: 0, width: bw, height: bh))
+                    ctx.restoreGState()
+                }
+            }
             
             ctx.setLineCap(.round)
             ctx.setLineJoin(.round)
@@ -201,10 +214,11 @@ public final class DrawingEditorViewModel: ObservableObject {
                 let scaledWidth = stroke.brushWidth * (scaleX + scaleY) / 2
                 ctx.setLineWidth(scaledWidth)
                 
-                if stroke.tool == .brush {
-                    ctx.setStrokeColor(gray: 1, alpha: 1)
+                if stroke.tool == .eraser {
+                    ctx.setBlendMode(.clear)
                 } else {
-                    ctx.setStrokeColor(gray: 0, alpha: 1)
+                    ctx.setBlendMode(.normal)
+                    ctx.setStrokeColor(stroke.color.cgColor)
                 }
                 
                 let pts = stroke.points.map {
@@ -216,61 +230,12 @@ public final class DrawingEditorViewModel: ObservableObject {
             }
             
             guard let data = ctx.data else { return false }
-            let bytes = data.bindMemory(to: UInt8.self, capacity: bw * bh)
+            let bytes = data.bindMemory(to: UInt8.self, capacity: bw * bh * 4)
             
-            switch mode {
-            case .manualOnly:
-                return (0..<(bw * bh)).contains { bytes[$0] > 127 }
-                
-            case .autoDetect:
-                guard let s = surface, hasAutoOverlay else {
-                    return (0..<(bw * bh)).contains { bytes[$0] > 127 }
-                }
-                
-                let hasBrushPixels = (0..<(bw * bh)).contains { bytes[$0] > 127 }
-                if hasBrushPixels { return true }
-                
-                guard let eraserCtx = CGContext(
-                    data: nil,
-                    width: bw, height: bh,
-                    bitsPerComponent: 8, bytesPerRow: bw,
-                    space: CGColorSpaceCreateDeviceGray(),
-                    bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue)
-                ) else { return true }
-                
-                eraserCtx.setFillColor(gray: 0, alpha: 1)
-                eraserCtx.fill(CGRect(x: 0, y: 0, width: bw, height: bh))
-                eraserCtx.setShouldAntialias(false)
-                eraserCtx.setStrokeColor(gray: 1, alpha: 1)
-                eraserCtx.setLineCap(.round)
-                eraserCtx.setLineJoin(.round)
-                
-                for stroke in strokes where stroke.tool == .eraser {
-                    guard stroke.points.count > 1 else { continue }
-                    let scaledWidth = stroke.brushWidth * (scaleX + scaleY) / 2
-                    eraserCtx.setLineWidth(scaledWidth)
-                    let pts = stroke.points.map {
-                        CGPoint(x: $0.x * scaleX, y: CGFloat(bh) - $0.y * scaleY)
-                    }
-                    eraserCtx.move(to: pts[0])
-                    pts.dropFirst().forEach { eraserCtx.addLine(to: $0) }
-                    eraserCtx.strokePath()
-                }
-                
-                guard let eraserData = eraserCtx.data else { return true }
-                let eraserBytes = eraserData.bindMemory(to: UInt8.self, capacity: bw * bh)
-                
-                let eraserTouchedMask = s.maskIndices.contains { eraserBytes[$0] > 127 }
-                if !eraserTouchedMask {
-                    return true
-                }
-                
-                let erasedCount = s.maskIndices.filter { eraserBytes[$0] > 127 }.count
-                let totalCount = s.maskIndices.count
-                let erasedPercent = Float(erasedCount) / Float(totalCount)
-                let autoFullyErased = erasedPercent >= 0.95
-                return !autoFullyErased
+            for i in stride(from: 3, to: bw * bh * 4, by: 4) {
+                if bytes[i] > 10 { return true }
             }
+            return false
         }.value
     }
     
