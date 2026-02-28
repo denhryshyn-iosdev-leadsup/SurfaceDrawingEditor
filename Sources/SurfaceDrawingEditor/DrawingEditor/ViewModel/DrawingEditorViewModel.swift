@@ -240,6 +240,7 @@ public final class DrawingEditorViewModel: ObservableObject {
                 
                 eraserCtx.setFillColor(gray: 0, alpha: 1)
                 eraserCtx.fill(CGRect(x: 0, y: 0, width: bw, height: bh))
+                eraserCtx.setShouldAntialias(false)
                 eraserCtx.setStrokeColor(gray: 1, alpha: 1)
                 eraserCtx.setLineCap(.round)
                 eraserCtx.setLineJoin(.round)
