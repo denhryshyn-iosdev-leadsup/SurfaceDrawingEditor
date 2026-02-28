@@ -10,16 +10,16 @@ import Combine
 
 @MainActor
 public final class DrawingEditorViewModel: ObservableObject {
-
+    
     // MARK: State
-
+    
     @Published public var isProcessing    = false
     @Published public var processingStatus = ""
     @Published public var errorMessage:   String?
-
+    
     @Published public var autoOverlayImage:    UIImage?
     @Published public var autoDetectedSurface: DetectedSurface?
-
+    
     // Drawing
     @Published public var currentTool:  DrawingTool = .brush
     @Published public var brushWidth:   CGFloat = 40
@@ -28,33 +28,24 @@ public final class DrawingEditorViewModel: ObservableObject {
     @Published public var redoStack:    [DrawingStroke] = []
     
     @Published public var isRenderingOverlay = false
-
+    
+    @Published private var _hasEdits: Bool = false
+    
     // MARK: Computed
-
+    
     public var currentWidth: CGFloat { currentTool == .brush ? brushWidth : eraserWidth }
     public var canUndo: Bool  { !strokes.isEmpty }
     public var canRedo: Bool  { !redoStack.isEmpty }
+    public var hasEdits: Bool { _hasEdits }
     
-    public var hasEdits: Bool {
-        let hasBrushStrokes = strokes.contains { $0.tool == .brush }
-        let hasEraserOnly = !strokes.isEmpty && !hasBrushStrokes
-        switch mode {
-        case .manualOnly:
-            return !strokes.isEmpty
-        case .autoDetect:
-            if hasEraserOnly { return false }
-            return hasBrushStrokes || autoOverlayImage != nil
-        }
-    }
-
     public let brushColor = UIColor(red: 190/255, green: 190/255, blue: 190/255, alpha: 1)
     
     public let mode: DrawingEditorMode
-
+    
     // MARK: Private
-
+    
     private var detector: WallFloorDetector?
-
+    
     public init(mode: DrawingEditorMode = .manualOnly) {
         self.mode = mode
         if case .autoDetect = mode {
@@ -63,20 +54,20 @@ public final class DrawingEditorViewModel: ObservableObject {
         }
         detector = (try? WallFloorDetector(modelFileName: "segformer_b2_ade20k"))
     }
-
+    
     // MARK: - Canvas size tracking
-
+    
     private(set) public var lastCanvasSize: CGSize = .zero
-
+    
     public func updateCanvasSize(_ size: CGSize) {
         lastCanvasSize = size
         if autoDetectedSurface != nil, autoOverlayImage == nil, !size.isEmpty {
             buildAutoOverlay(canvasSize: size)
         }
     }
-
+    
     // MARK: - Auto Detect
-
+    
     public func runAutoDetect(image: UIImage, type: SurfaceType) async {
         isProcessing = true
         processingStatus = "Analyzing..."
@@ -84,9 +75,9 @@ public final class DrawingEditorViewModel: ObservableObject {
         autoDetectedSurface = nil
         autoOverlayImage = nil
         defer { isProcessing = false }
-
+        
         guard let det = detector else { errorMessage = "Model not loaded"; return }
-
+        
         do {
             let normalized = image.normalizedImage()
             let surfaces   = try await det.detect(image: normalized)
@@ -100,7 +91,7 @@ public final class DrawingEditorViewModel: ObservableObject {
             errorMessage = error.localizedDescription
         }
     }
-
+    
     public func buildAutoOverlay(canvasSize: CGSize) {
         guard let surface = autoDetectedSurface else { return }
         isRenderingOverlay = true
@@ -109,34 +100,126 @@ public final class DrawingEditorViewModel: ObservableObject {
             await MainActor.run { [weak self] in
                 self?.autoOverlayImage = overlay
                 self?.isRenderingOverlay = false
+                self?.recalculateHasEdits()
             }
         }
     }
-
+    
     // MARK: - Drawing Actions
-
+    
     public func selectTool(_ tool: DrawingTool) { currentTool = tool }
-
+    
     public func setBrushWidth(_ w: CGFloat) {
         currentTool == .brush ? (brushWidth = w) : (eraserWidth = w)
     }
-
+    
     public func addStroke(_ stroke: DrawingStroke) {
         strokes.append(stroke)
         redoStack.removeAll()
+        recalculateHasEdits()
     }
     
-    public func undo() { if let s = strokes.popLast() { redoStack.append(s) } }
-    public func redo() { if let s = redoStack.popLast() { strokes.append(s) } }
-
+    public func undo() {
+        if let s = strokes.popLast() { redoStack.append(s) }
+        recalculateHasEdits()
+    }
+    
+    public func redo() {
+        if let s = redoStack.popLast() { strokes.append(s) }
+        recalculateHasEdits()
+    }
+    
+    // MARK: - Helper funcs
+    
+    private func recalculateHasEdits() {
+        let hasBrushStrokes = strokes.contains { $0.tool == .brush }
+        
+        switch mode {
+        case .manualOnly:
+            _hasEdits = hasBrushStrokes
+            
+        case .autoDetect:
+            if hasBrushStrokes {
+                _hasEdits = true
+                return
+            }
+            guard autoOverlayImage != nil, autoDetectedSurface != nil else {
+                _hasEdits = false
+                return
+            }
+            
+            let currentStrokes = strokes
+            let surface = autoDetectedSurface!
+            let canvasSize = lastCanvasSize
+            
+            Task {
+                let fullyErased = await Self.checkFullyErased(
+                    eraserStrokes: currentStrokes.filter { $0.tool == .eraser },
+                    surface: surface,
+                    canvasSize: canvasSize
+                )
+                _hasEdits = !fullyErased
+            }
+        }
+    }
+    
+    private static func checkFullyErased(
+        eraserStrokes: [DrawingStroke],
+        surface: DetectedSurface,
+        canvasSize: CGSize
+    ) async -> Bool {
+        guard !eraserStrokes.isEmpty else { return false }
+        guard !canvasSize.isEmpty else { return false }
+        
+        return await Task.detached(priority: .userInitiated) {
+            let mw = surface.maskWidth
+            let mh = surface.maskHeight
+            
+            guard let ctx = CGContext(
+                data: nil,
+                width: mw, height: mh,
+                bitsPerComponent: 8, bytesPerRow: mw,
+                space: CGColorSpaceCreateDeviceGray(),
+                bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue)
+            ) else { return false }
+            
+            ctx.setFillColor(gray: 0, alpha: 1)
+            ctx.fill(CGRect(x: 0, y: 0, width: mw, height: mh))
+            
+            let scaleX = CGFloat(mw) / canvasSize.width
+            let scaleY = CGFloat(mh) / canvasSize.height
+            
+            ctx.setStrokeColor(gray: 1, alpha: 1)
+            ctx.setLineCap(.round)
+            ctx.setLineJoin(.round)
+            
+            for stroke in eraserStrokes {
+                guard stroke.points.count > 1 else { continue }
+                let scaledWidth = stroke.brushWidth * (scaleX + scaleY) / 2
+                ctx.setLineWidth(scaledWidth)
+                
+                let pts = stroke.points.map {
+                    CGPoint(x: $0.x * scaleX, y: CGFloat(mh) - $0.y * scaleY)
+                }
+                ctx.move(to: pts[0])
+                pts.dropFirst().forEach { ctx.addLine(to: $0) }
+                ctx.strokePath()
+            }
+            
+            guard let data = ctx.data else { return false }
+            let bytes = data.bindMemory(to: UInt8.self, capacity: mw * mh)
+            
+            return surface.maskIndices.allSatisfy { bytes[$0] > 127 }
+        }.value
+    }
+    
     // MARK: - Build Result
-    // ✅ Composite: original + overlay, затем сжатие через ImageProcessor
-
+    
     public func buildResult(originalImage: UIImage, canvasSize: CGSize) async -> DrawingResult? {
         isProcessing = true
         processingStatus = "Preparing..."
         defer { isProcessing = false }
-
+        
         // 1. Рисуем overlay поверх оригинала
         let composite = CompositeRenderer.render(
             original: originalImage,
@@ -144,7 +227,7 @@ public final class DrawingEditorViewModel: ObservableObject {
             strokes: strokes,
             canvasSize: canvasSize
         )
-
+        
         // 2. Сжимаем до 10МБ / 4096px
         do {
             processingStatus = "Compressing..."
