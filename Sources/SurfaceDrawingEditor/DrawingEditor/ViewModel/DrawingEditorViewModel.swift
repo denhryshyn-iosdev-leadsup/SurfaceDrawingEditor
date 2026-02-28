@@ -223,17 +223,49 @@ public final class DrawingEditorViewModel: ObservableObject {
                 return (0..<(bw * bh)).contains { bytes[$0] > 127 }
                 
             case .autoDetect:
-                let hasBrushPixels = (0..<(bw * bh)).contains { bytes[$0] > 127 }
+                guard let s = surface, hasAutoOverlay else {
+                    return (0..<(bw * bh)).contains { bytes[$0] > 127 }
+                }
                 
+                let hasBrushPixels = (0..<(bw * bh)).contains { bytes[$0] > 127 }
                 if hasBrushPixels { return true }
                 
-                guard let s = surface, hasAutoOverlay else { return false }
+                guard let eraserCtx = CGContext(
+                    data: nil,
+                    width: bw, height: bh,
+                    bitsPerComponent: 8, bytesPerRow: bw,
+                    space: CGColorSpaceCreateDeviceGray(),
+                    bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue)
+                ) else { return true }
                 
-                let eraserStrokes = strokes.filter { $0.tool == .eraser }
-                guard !eraserStrokes.isEmpty else {
+                eraserCtx.setFillColor(gray: 0, alpha: 1)
+                eraserCtx.fill(CGRect(x: 0, y: 0, width: bw, height: bh))
+                eraserCtx.setStrokeColor(gray: 1, alpha: 1)
+                eraserCtx.setLineCap(.round)
+                eraserCtx.setLineJoin(.round)
+                
+                for stroke in strokes where stroke.tool == .eraser {
+                    guard stroke.points.count > 1 else { continue }
+                    let scaledWidth = stroke.brushWidth * (scaleX + scaleY) / 2
+                    eraserCtx.setLineWidth(scaledWidth)
+                    let pts = stroke.points.map {
+                        CGPoint(x: $0.x * scaleX, y: CGFloat(bh) - $0.y * scaleY)
+                    }
+                    eraserCtx.move(to: pts[0])
+                    pts.dropFirst().forEach { eraserCtx.addLine(to: $0) }
+                    eraserCtx.strokePath()
+                }
+                
+                guard let eraserData = eraserCtx.data else { return true }
+                let eraserBytes = eraserData.bindMemory(to: UInt8.self, capacity: bw * bh)
+                
+                let eraserTouchedMask = s.maskIndices.contains { eraserBytes[$0] > 127 }
+                if !eraserTouchedMask {
                     return true
                 }
-                return !s.maskIndices.allSatisfy { bytes[$0] <= 127 }
+                
+                let autoFullyErased = s.maskIndices.allSatisfy { eraserBytes[$0] > 127 }
+                return !autoFullyErased
             }
         }.value
     }
