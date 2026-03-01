@@ -429,7 +429,7 @@ final class _DrawingCanvasUIView: UIView {
         var i = 3
         while i < length {
             if bytes[i] > 5 { return true }
-            i += 4 * 16
+            i += 4 * 4
         }
         return false
     }
