@@ -155,6 +155,9 @@ final class _ZoomableDrawingVC: UIViewController {
         currentTool: DrawingTool, brushColor: UIColor, currentWidth: CGFloat,
         onStrokePoint: @escaping (CGPoint) -> Void, onStrokeEnd: @escaping () -> Void
     ) {
+        let strokesChanged = drawingView.strokes.count != strokes.count
+        let overlayChanged = drawingView.overlayImage !== overlayImage
+        
         self.onStrokePoint = onStrokePoint
         self.onStrokeEnd   = onStrokeEnd
         drawingView.overlayImage  = overlayImage
@@ -164,6 +167,14 @@ final class _ZoomableDrawingVC: UIViewController {
         drawingView.brushColor    = brushColor
         drawingView.currentWidth  = currentWidth
         drawingView.setNeedsDisplay()
+        
+        if strokesChanged || overlayChanged {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                let hasContent = self.drawingView.hasVisibleContent()
+                self.onVisibleContentChanged?(hasContent)
+            }
+        }
     }
 
     override func viewDidLoad() {
@@ -315,8 +326,6 @@ final class _ZoomableDrawingVC: UIViewController {
             onStrokePoint?(pt)
             onStrokeEnd?()
             drawingView.hideCursor()
-            let hasContent = drawingView.hasVisibleContent()
-            onVisibleContentChanged?(hasContent)
         default:
             drawingView.hideCursor()
         }
