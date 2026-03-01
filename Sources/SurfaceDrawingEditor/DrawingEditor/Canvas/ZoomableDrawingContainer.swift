@@ -24,6 +24,7 @@ struct ZoomableDrawingContainer: View {
     var onStrokeEnd: () -> Void
     var onCanvasSizeKnown: ((CGSize) -> Void)? = nil
     var onContentFrameChanged: ((CGRect) -> Void)? = nil
+    var onVisibleContentChanged: ((Bool) -> Void)? = nil
     
     var zoomController: ZoomController? = nil
 
@@ -33,6 +34,7 @@ struct ZoomableDrawingContainer: View {
         weak var vc: _ZoomableDrawingVC?
         func zoomIn()  { vc?.zoomIn() }
         func zoomOut() { vc?.zoomOut() }
+        func checkVisibleContent() -> Bool { vc?.drawingView.hasVisibleContent() ?? false }
     }
 
     // MARK: Body
@@ -50,6 +52,7 @@ struct ZoomableDrawingContainer: View {
             onStrokeEnd: onStrokeEnd,
             onCanvasSizeKnown: onCanvasSizeKnown,
             onContentFrameChanged: onContentFrameChanged,
+            onVisibleContentChanged: onVisibleContentChanged,
             zoomController: zoomController
         )
     }
@@ -69,12 +72,14 @@ private struct _ZoomableDrawingRepresentable: UIViewControllerRepresentable {
     var onStrokeEnd: () -> Void
     var onCanvasSizeKnown: ((CGSize) -> Void)?
     var onContentFrameChanged: ((CGRect) -> Void)?
+    var onVisibleContentChanged: ((Bool) -> Void)?
     var zoomController: ZoomableDrawingContainer.ZoomController?
 
     func makeUIViewController(context: Context) -> _ZoomableDrawingVC {
         let vc = _ZoomableDrawingVC()
         vc.onCanvasSizeKnown = onCanvasSizeKnown
         vc.onContentFrameChanged = onContentFrameChanged
+        vc.onVisibleContentChanged = onVisibleContentChanged
         zoomController?.vc = vc
         vc.configure(
             image: image, overlayImage: overlayImage,
@@ -87,6 +92,7 @@ private struct _ZoomableDrawingRepresentable: UIViewControllerRepresentable {
 
     func updateUIViewController(_ vc: _ZoomableDrawingVC, context: Context) {
         zoomController?.vc = vc
+        vc.onVisibleContentChanged = onVisibleContentChanged
         vc.update(
             overlayImage: overlayImage,
             strokes: strokes, currentStroke: currentStroke,
@@ -103,7 +109,7 @@ final class _ZoomableDrawingVC: UIViewController {
     private let scrollView  = UIScrollView()
     private let contentView = UIView()
     private let imageView   = UIImageView()
-    private let drawingView = _DrawingCanvasUIView()
+    private(set) var drawingView = _DrawingCanvasUIView()
     
     private var scrollViewWidthConstraint:  NSLayoutConstraint?
     private var scrollViewHeightConstraint: NSLayoutConstraint?
@@ -112,6 +118,7 @@ final class _ZoomableDrawingVC: UIViewController {
     private var onStrokeEnd:   (() -> Void)?
     var onCanvasSizeKnown: ((CGSize) -> Void)?
     var onContentFrameChanged: ((CGRect) -> Void)?
+    var onVisibleContentChanged: ((Bool) -> Void)?
 
     func zoomIn() {
         scrollView.setZoomScale(min(scrollView.zoomScale * 1.5, scrollView.maximumZoomScale), animated: true)
@@ -299,10 +306,19 @@ final class _ZoomableDrawingVC: UIViewController {
     @objc private func handleDraw(_ g: UIPanGestureRecognizer) {
         let pt = g.location(in: drawingView)
         switch g.state {
-        case .began:                     drawingView.showCursor(at: pt)
-        case .changed:                   onStrokePoint?(pt); drawingView.showCursor(at: pt)
-        case .ended, .cancelled:         onStrokePoint?(pt); onStrokeEnd?(); drawingView.hideCursor()
-        default:                         drawingView.hideCursor()
+        case .began:
+            drawingView.showCursor(at: pt)
+        case .changed:
+            onStrokePoint?(pt)
+            drawingView.showCursor(at: pt)
+        case .ended, .cancelled:
+            onStrokePoint?(pt)
+            onStrokeEnd?()
+            drawingView.hideCursor()
+            let hasContent = drawingView.hasVisibleContent()
+            onVisibleContentChanged?(hasContent)
+        default:
+            drawingView.hideCursor()
         }
     }
 }
@@ -379,6 +395,34 @@ final class _DrawingCanvasUIView: UIView {
         outerCursorLayer?.isHidden = true
         innerCursorLayer?.isHidden = true
         centerCursorLayer?.isHidden = true
+    }
+    
+    func hasVisibleContent() -> Bool {
+        let size = bounds.size
+        guard size.width > 0, size.height > 0 else { return false }
+
+        UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
+        defer { UIGraphicsEndImageContext() }
+        guard let ctx = UIGraphicsGetCurrentContext() else { return false }
+
+        ctx.clear(CGRect(origin: .zero, size: size))
+        overlayImage?.draw(in: bounds)
+        strokes.forEach { drawStroke($0, in: ctx) }
+
+        guard let uiImage = UIGraphicsGetImageFromCurrentImageContext(),
+              let cgImage = uiImage.cgImage,
+              let dataProvider = cgImage.dataProvider,
+              let cfData = dataProvider.data else { return false }
+
+        let length = CFDataGetLength(cfData)
+        guard let bytes = CFDataGetBytePtr(cfData) else { return false }
+
+        var i = 3
+        while i < length {
+            if bytes[i] > 5 { return true }
+            i += 4 * 16
+        }
+        return false
     }
 
     override func draw(_ rect: CGRect) {

@@ -77,6 +77,9 @@ public struct DrawingEditorView: View {
                 vm.updateCanvasSize(size)
             },
             onContentFrameChanged: { contentFrame = $0 },
+            onVisibleContentChanged: { hasContent in
+                vm.setHasVisibleContent(hasContent)
+            },
             zoomController: zoomController
         )
         .clipped()
@@ -119,7 +122,7 @@ public struct DrawingEditorView: View {
     private var toolbarContent: some View {
         VStack(spacing: FigmaLayoutScaler.scaleHeight(14)) {
             if let err = vm.errorMessage { errorBanner(err) }
-
+            
             HStack {
                 HStack(spacing: FigmaLayoutScaler.scaleWidth(10)) {
                     toolButton(.brush)
@@ -129,10 +132,22 @@ public struct DrawingEditorView: View {
                 HStack(spacing: FigmaLayoutScaler.scaleWidth(4)) {
                     undoRedoBtn(activeIcon: "draw_back_active_ic",
                                 inactiveIcon: "draw_back_inactive_ic",
-                                enabled: vm.canUndo) { vm.undo() }
+                                enabled: vm.canUndo) {
+                        vm.undo()
+                        DispatchQueue.main.async {
+                            let hasContent = zoomController.checkVisibleContent()
+                            vm.setHasVisibleContent(hasContent)
+                        }
+                    }
                     undoRedoBtn(activeIcon: "draw_for_active_ic",
                                 inactiveIcon: "draw_for_inactive_ic",
-                                enabled: vm.canRedo) { vm.redo() }
+                                enabled: vm.canRedo) {
+                        vm.redo()
+                        DispatchQueue.main.async {
+                            let hasContent = zoomController.checkVisibleContent()
+                            vm.setHasVisibleContent(hasContent)
+                        }
+                    }
                 }
             }
             .padding(.horizontal, FigmaLayoutScaler.scaleWidth(20))
