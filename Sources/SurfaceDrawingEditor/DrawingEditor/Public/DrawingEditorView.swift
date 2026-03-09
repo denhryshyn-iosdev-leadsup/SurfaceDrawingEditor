@@ -37,7 +37,7 @@ public struct DrawingEditorView: View {
 
     public var body: some View {
         //ZStack {
-            Color.clear.ignoresSafeArea()
+            //Color.clear.ignoresSafeArea()
             VStack(spacing: FigmaLayoutScaler.scaleHeight(24)) {
                 canvas
                 toolbar
