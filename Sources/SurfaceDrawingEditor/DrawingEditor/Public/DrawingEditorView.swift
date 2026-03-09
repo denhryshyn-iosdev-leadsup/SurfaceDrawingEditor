@@ -156,7 +156,7 @@ public struct DrawingEditorView: View {
             brushWidthRow
             Spacer(minLength: 0)
         }
-        .padding(.bottom, safeAreaBottom)
+        //.padding(.bottom, safeAreaBottom)
     }
 
     private var brushWidthRow: some View {
