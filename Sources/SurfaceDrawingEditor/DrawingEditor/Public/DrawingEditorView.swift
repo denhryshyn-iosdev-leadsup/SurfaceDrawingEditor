@@ -154,9 +154,7 @@ public struct DrawingEditorView: View {
             .padding(.top, FigmaLayoutScaler.scaleHeight(16))
 
             brushWidthRow
-            Spacer(minLength: 0)
         }
-        //.padding(.bottom, safeAreaBottom)
     }
 
     private var brushWidthRow: some View {
