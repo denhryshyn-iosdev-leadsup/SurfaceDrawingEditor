@@ -280,13 +280,16 @@ final class _ZoomableDrawingVC: UIViewController {
     }
 
     private func centerContent() {
+        //        let ox = max((scrollView.bounds.width  - scrollView.contentSize.width)  / 2, 0)
+        //        let oy = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, 0)
+        //        scrollView.contentInset = UIEdgeInsets(top: oy, left: ox, bottom: oy, right: ox)
         let ox = max((scrollView.bounds.width  - scrollView.contentSize.width)  / 2, 0)
-        let oy = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, 0)
-        scrollView.contentInset = UIEdgeInsets(top: oy, left: ox, bottom: oy, right: ox)
+        scrollView.contentInset = UIEdgeInsets(top: 0, left: ox, bottom: 0, right: ox)
         let cW = scrollView.contentSize.width
         let cH = scrollView.contentSize.height
         if cW > 0, cH > 0 {
-            onContentFrameChanged?(CGRect(x: ox, y: oy, width: cW, height: cH))
+            //onContentFrameChanged?(CGRect(x: ox, y: oy, width: cW, height: cH))
+            onContentFrameChanged?(CGRect(x: ox, y: 0, width: cW, height: cH))
         }
     }
 
