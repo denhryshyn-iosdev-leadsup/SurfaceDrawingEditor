@@ -218,8 +218,11 @@ final class _ZoomableDrawingVC: UIViewController {
         contentView.layer.cornerRadius  = 20
         contentView.layer.masksToBounds = true
         scrollView.addSubview(contentView)
-
-        imageView.contentMode     = .scaleAspectFit
+        
+        //        imageView.contentMode     = .scaleAspectFit
+        //        imageView.backgroundColor = .clear
+        imageView.contentMode     = .scaleAspectFill
+        imageView.clipsToBounds   = true
         imageView.backgroundColor = .clear
         imageView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(imageView)
@@ -240,14 +243,19 @@ final class _ZoomableDrawingVC: UIViewController {
             drawingView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
         ])
     }
-
+    
     private func updateContentSize() {
+        //        guard let img = imageView.image, view.bounds.width > 0 else { return }
+        //        let vW = view.bounds.width, vH = view.bounds.height
+        //        let ia = img.size.width / img.size.height
+        //        let va = vW / vH
+        //        let cW: CGFloat, cH: CGFloat
+        //        if ia > va { cW = vW; cH = vW / ia } else { cH = vH; cW = vH * ia }
         guard let img = imageView.image, view.bounds.width > 0 else { return }
         let vW = view.bounds.width, vH = view.bounds.height
         let ia = img.size.width / img.size.height
-        let va = vW / vH
-        let cW: CGFloat, cH: CGFloat
-        if ia > va { cW = vW; cH = vW / ia } else { cH = vH; cW = vH * ia }
+        let cW = vW
+        let cH = min(vW / ia, vH)
         
         scrollViewWidthConstraint?.constant  = cW
         scrollViewHeightConstraint?.constant = cH
