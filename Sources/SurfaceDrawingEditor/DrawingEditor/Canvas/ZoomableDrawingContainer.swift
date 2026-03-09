@@ -100,6 +100,13 @@ private struct _ZoomableDrawingRepresentable: UIViewControllerRepresentable {
             onStrokePoint: onStrokePoint, onStrokeEnd: onStrokeEnd
         )
     }
+    
+    func sizeThatFits(_ proposal: ProposedViewSize, uiViewController: _ZoomableDrawingVC, context: Context) -> CGSize? {
+        guard let width = proposal.width, width > 0 else { return nil }
+        let ia = image.size.width / image.size.height
+        let height = min(width / ia, proposal.height ?? .infinity)
+        return CGSize(width: width, height: height)
+    }
 }
 
 // MARK: - ViewController
@@ -108,7 +115,7 @@ final class _ZoomableDrawingVC: UIViewController {
 
     private let scrollView  = UIScrollView()
     private let contentView = UIView()
-    private let imageView   = UIImageView()
+    private(set) var imageView   = UIImageView()
     private(set) var drawingView = _DrawingCanvasUIView()
     
     private var scrollViewWidthConstraint:  NSLayoutConstraint?
@@ -262,8 +269,6 @@ final class _ZoomableDrawingVC: UIViewController {
         scrollViewWidthConstraint?.constant  = cW
         scrollViewHeightConstraint?.constant = cH
         view.layoutIfNeeded()
-        
-        view.frame.size.height = cH
 
         contentView.frame      = CGRect(x: 0, y: 0, width: cW, height: cH)
         scrollView.contentSize = CGSize(width: cW, height: cH)
