@@ -262,6 +262,8 @@ final class _ZoomableDrawingVC: UIViewController {
         scrollViewWidthConstraint?.constant  = cW
         scrollViewHeightConstraint?.constant = cH
         view.layoutIfNeeded()
+        
+        view.frame.size.height = cH
 
         contentView.frame      = CGRect(x: 0, y: 0, width: cW, height: cH)
         scrollView.contentSize = CGSize(width: cW, height: cH)
