@@ -194,6 +194,9 @@ final class _ZoomableDrawingVC: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        // for test only
+        scrollView.backgroundColor = .red
+        view.backgroundColor = .blue
         updateContentSize()
     }
 
