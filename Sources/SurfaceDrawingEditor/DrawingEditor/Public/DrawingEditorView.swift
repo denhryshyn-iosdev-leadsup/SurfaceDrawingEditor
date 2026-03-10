@@ -40,7 +40,6 @@ public struct DrawingEditorView: View {
             Color.clear.ignoresSafeArea()
             VStack(spacing: FigmaLayoutScaler.scaleHeight(24)) {
                 canvas
-                Spacer(minLength: 0)
                 toolbar
             }
         }
