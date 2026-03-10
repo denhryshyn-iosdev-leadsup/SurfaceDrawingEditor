@@ -118,8 +118,8 @@ final class _ZoomableDrawingVC: UIViewController {
     private(set) var imageView   = UIImageView()
     private(set) var drawingView = _DrawingCanvasUIView()
     
-    //private var scrollViewWidthConstraint:  NSLayoutConstraint?
-    //private var scrollViewHeightConstraint: NSLayoutConstraint?
+    private var scrollViewWidthConstraint:  NSLayoutConstraint?
+    private var scrollViewHeightConstraint: NSLayoutConstraint?
 
     private var onStrokePoint: ((CGPoint) -> Void)?
     private var onStrokeEnd:   (() -> Void)?
@@ -197,50 +197,27 @@ final class _ZoomableDrawingVC: UIViewController {
         updateContentSize()
     }
 
-//    private func setupScrollView() {
-//        scrollView.delegate = self
-//        scrollView.minimumZoomScale = 1.0
-//        scrollView.maximumZoomScale = 4.0
-//        scrollView.showsVerticalScrollIndicator   = false
-//        scrollView.showsHorizontalScrollIndicator = false
-//        scrollView.bouncesZoom    = true
-//        scrollView.backgroundColor = .clear
-//        scrollView.clipsToBounds = true
-//        scrollView.layer.cornerRadius = 20
-//        scrollView.translatesAutoresizingMaskIntoConstraints = false
-//        view.addSubview(scrollView)
-//        
-//        setupZoomButtons()
-//        
-//        scrollView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-//        scrollView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
-//        scrollViewWidthConstraint  = scrollView.widthAnchor.constraint(equalToConstant: 100)
-//        scrollViewHeightConstraint = scrollView.heightAnchor.constraint(equalToConstant: 100)
-//        scrollViewWidthConstraint?.isActive  = true
-//        scrollViewHeightConstraint?.isActive = true
-//    }
-    
     private func setupScrollView() {
         scrollView.delegate = self
         scrollView.minimumZoomScale = 1.0
         scrollView.maximumZoomScale = 4.0
-        scrollView.showsVerticalScrollIndicator = false
+        scrollView.showsVerticalScrollIndicator   = false
         scrollView.showsHorizontalScrollIndicator = false
-        scrollView.bouncesZoom = true
+        scrollView.bouncesZoom    = true
         scrollView.backgroundColor = .clear
         scrollView.clipsToBounds = true
         scrollView.layer.cornerRadius = 20
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
-
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
+        
         setupZoomButtons()
+        
+        scrollView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        scrollView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
+        scrollViewWidthConstraint  = scrollView.widthAnchor.constraint(equalToConstant: 100)
+        scrollViewHeightConstraint = scrollView.heightAnchor.constraint(equalToConstant: 100)
+        scrollViewWidthConstraint?.isActive  = true
+        scrollViewHeightConstraint?.isActive = true
     }
 
     private func setupContentView() {
@@ -273,73 +250,42 @@ final class _ZoomableDrawingVC: UIViewController {
         ])
     }
     
-//    private func updateContentSize() {
-//        //        guard let img = imageView.image, view.bounds.width > 0 else { return }
-//        //        let vW = view.bounds.width, vH = view.bounds.height
-//        //        let ia = img.size.width / img.size.height
-//        //        let va = vW / vH
-//        //        let cW: CGFloat, cH: CGFloat
-//        //        if ia > va { cW = vW; cH = vW / ia } else { cH = vH; cW = vH * ia }
-//        guard let img = imageView.image, view.bounds.width > 0 else { return }
-//        let vW = view.bounds.width, vH = view.bounds.height
-//        let ia = img.size.width / img.size.height
-//        let cW = vW
-//        let cH = min(vW / ia, vH)
-//        
-//        scrollViewWidthConstraint?.constant  = cW
-//        scrollViewHeightConstraint?.constant = cH
-//        view.layoutIfNeeded()
-//
-//        contentView.frame      = CGRect(x: 0, y: 0, width: cW, height: cH)
-//        scrollView.contentSize = CGSize(width: cW, height: cH)
-//        centerContent()
-//
-//        let sz = CGSize(width: cW, height: cH)
-//        drawingView.canvasSize = sz
-//        onCanvasSizeKnown?(sz)
-//    }
-    
     private func updateContentSize() {
-        guard let img = imageView.image, view.bounds.width > 0, view.bounds.height > 0 else { return }
-
-        let vW = view.bounds.width
-        let vH = view.bounds.height
+        //        guard let img = imageView.image, view.bounds.width > 0 else { return }
+        //        let vW = view.bounds.width, vH = view.bounds.height
+        //        let ia = img.size.width / img.size.height
+        //        let va = vW / vH
+        //        let cW: CGFloat, cH: CGFloat
+        //        if ia > va { cW = vW; cH = vW / ia } else { cH = vH; cW = vH * ia }
+        guard let img = imageView.image, view.bounds.width > 0 else { return }
+        let vW = view.bounds.width, vH = view.bounds.height
         let ia = img.size.width / img.size.height
-
         let cW = vW
         let cH = min(vW / ia, vH)
+        
+        scrollViewWidthConstraint?.constant  = cW
+        scrollViewHeightConstraint?.constant = cH
+        view.layoutIfNeeded()
 
-        contentView.frame = CGRect(x: 0, y: 0, width: cW, height: cH)
+        contentView.frame      = CGRect(x: 0, y: 0, width: cW, height: cH)
         scrollView.contentSize = CGSize(width: cW, height: cH)
-
-        drawingView.canvasSize = CGSize(width: cW, height: cH)
-        onCanvasSizeKnown?(CGSize(width: cW, height: cH))
-
         centerContent()
+
+        let sz = CGSize(width: cW, height: cH)
+        drawingView.canvasSize = sz
+        onCanvasSizeKnown?(sz)
     }
 
-//    private func centerContent() {
-//        //        let ox = max((scrollView.bounds.width  - scrollView.contentSize.width)  / 2, 0)
-//        //        let oy = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, 0)
-//        //        scrollView.contentInset = UIEdgeInsets(top: oy, left: ox, bottom: oy, right: ox)
-//        let ox = max((scrollView.bounds.width  - scrollView.contentSize.width)  / 2, 0)
-//        scrollView.contentInset = UIEdgeInsets(top: 0, left: ox, bottom: 0, right: ox)
-//        let cW = scrollView.contentSize.width
-//        let cH = scrollView.contentSize.height
-//        if cW > 0, cH > 0 {
-//            //onContentFrameChanged?(CGRect(x: ox, y: oy, width: cW, height: cH))
-//            onContentFrameChanged?(CGRect(x: ox, y: 0, width: cW, height: cH))
-//        }
-//    }
-    
     private func centerContent() {
-        let ox = max((scrollView.bounds.width - scrollView.contentSize.width) / 2, 0)
-
+        //        let ox = max((scrollView.bounds.width  - scrollView.contentSize.width)  / 2, 0)
+        //        let oy = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, 0)
+        //        scrollView.contentInset = UIEdgeInsets(top: oy, left: ox, bottom: oy, right: ox)
+        let ox = max((scrollView.bounds.width  - scrollView.contentSize.width)  / 2, 0)
         scrollView.contentInset = UIEdgeInsets(top: 0, left: ox, bottom: 0, right: ox)
-
         let cW = scrollView.contentSize.width
         let cH = scrollView.contentSize.height
         if cW > 0, cH > 0 {
+            //onContentFrameChanged?(CGRect(x: ox, y: oy, width: cW, height: cH))
             onContentFrameChanged?(CGRect(x: ox, y: 0, width: cW, height: cH))
         }
     }
