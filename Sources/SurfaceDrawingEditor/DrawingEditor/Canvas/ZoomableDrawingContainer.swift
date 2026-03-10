@@ -101,14 +101,12 @@ private struct _ZoomableDrawingRepresentable: UIViewControllerRepresentable {
         )
     }
     
-    func sizeThatFits(_ proposal: ProposedViewSize, uiViewController: _ZoomableDrawingVC, context: Context) -> CGSize? {
-        guard let width = proposal.width, width > 0 else { return nil }
-        
-        let aspect = image.size.width / image.size.height
-        let height = width / aspect
-        
-        return CGSize(width: width, height: height)
-    }
+//    func sizeThatFits(_ proposal: ProposedViewSize, uiViewController: _ZoomableDrawingVC, context: Context) -> CGSize? {
+//        guard let width = proposal.width, width > 0 else { return nil }
+//        let ia = image.size.width / image.size.height
+//        let height = min(width / ia, proposal.height ?? .infinity)
+//        return CGSize(width: width, height: height)
+//    }
 }
 
 // MARK: - ViewController
@@ -301,8 +299,8 @@ final class _ZoomableDrawingVC: UIViewController {
         
         let aspect = img.size.width / img.size.height
         
-        let contentWidth = containerWidth
-        let contentHeight = containerWidth / aspect
+        let contentHeight = min(containerWidth / aspect, containerHeight)
+        let contentWidth = contentHeight * aspect
 
         scrollViewWidthConstraint?.constant = contentWidth
         scrollViewHeightConstraint?.constant = contentHeight
@@ -332,23 +330,19 @@ final class _ZoomableDrawingVC: UIViewController {
     }
     
     private func centerContent() {
-        let scrollSize = scrollView.bounds.size
-        let contentSize = scrollView.contentSize
+        let scrollSize   = scrollView.bounds.size
+        let contentSize  = scrollView.contentSize
 
-        let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
+        let offsetX = max((scrollSize.width  - contentSize.width)  / 2, 0)
+        let offsetY = max((scrollSize.height - contentSize.height) / 2, 0)
 
         scrollView.contentInset = UIEdgeInsets(
-            top: 0,
-            left: offsetX,
-            bottom: 0,
-            right: offsetX
+            top: offsetY, left: offsetX, bottom: offsetY, right: offsetX  // добавить top/bottom
         )
 
         onContentFrameChanged?(CGRect(
-            x: offsetX,
-            y: 0,
-            width: contentSize.width,
-            height: contentSize.height
+            x: offsetX, y: offsetY,
+            width: contentSize.width, height: contentSize.height
         ))
     }
 
