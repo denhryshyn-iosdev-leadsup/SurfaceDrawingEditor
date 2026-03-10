@@ -22,7 +22,6 @@ public struct DrawingEditorView: View {
     @State private var canvasSize:    CGSize    = .zero
     @State private var contentFrame:  CGRect    = .zero
     @State private var zoomController = ZoomableDrawingContainer.ZoomController()
-    @State private var canvasHeight:  CGFloat   = 0
     
     public init(
         image: UIImage,
@@ -41,7 +40,6 @@ public struct DrawingEditorView: View {
             Color.clear.ignoresSafeArea()
             VStack(spacing: FigmaLayoutScaler.scaleHeight(24)) {
                 canvas
-                    .frame(height: canvasHeight > 0 ? canvasHeight : nil)
                 toolbar
             }
         }
@@ -76,7 +74,6 @@ public struct DrawingEditorView: View {
             },
             onCanvasSizeKnown: { size in
                 canvasSize = size
-                canvasHeight = size.height
                 vm.updateCanvasSize(size)
             },
             onContentFrameChanged: { contentFrame = $0 },
