@@ -82,6 +82,7 @@ public struct DrawingEditorView: View {
             },
             zoomController: zoomController
         )
+        .aspectRatio(image.size.width / image.size.height, contentMode: .fit)
         .clipped()
         .overlay {
             if vm.isProcessing || vm.isRenderingOverlay {
