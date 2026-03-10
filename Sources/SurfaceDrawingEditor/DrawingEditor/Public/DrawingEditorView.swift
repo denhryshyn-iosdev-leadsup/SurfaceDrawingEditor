@@ -40,12 +40,13 @@ public struct DrawingEditorView: View {
             Color.clear.ignoresSafeArea()
             VStack(spacing: FigmaLayoutScaler.scaleHeight(24)) {
                 canvas
-                    .aspectRatio(
-                        image.size.width / image.size.height,
-                        contentMode: .fit
-                    )
                 toolbar
             }
+        }
+        .preferredColorScheme(.light)
+        .onAppear {
+            FontRegistrar.registerIfNeeded()
+            startIfNeeded()
         }
     }
 
