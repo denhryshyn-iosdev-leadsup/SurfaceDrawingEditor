@@ -159,7 +159,6 @@ public struct DrawingEditorView: View {
                     }
                 }
             }
-            .padding(.horizontal, FigmaLayoutScaler.scaleWidth(20))
             .padding(.top, FigmaLayoutScaler.scaleHeight(16))
 
             brushWidthRow
@@ -177,7 +176,6 @@ public struct DrawingEditorView: View {
                 range: 10...100
             )
         }
-        .padding(.horizontal, FigmaLayoutScaler.scaleWidth(20))
         .padding(.bottom, FigmaLayoutScaler.scaleHeight(4))
     }
 
@@ -187,7 +185,6 @@ public struct DrawingEditorView: View {
             Text(text).appFont(.regular, 13).foregroundStyle(.secondary)
             Spacer()
         }
-        .padding(.horizontal, FigmaLayoutScaler.scaleWidth(20))
         .padding(.top, FigmaLayoutScaler.scaleHeight(4))
     }
     
