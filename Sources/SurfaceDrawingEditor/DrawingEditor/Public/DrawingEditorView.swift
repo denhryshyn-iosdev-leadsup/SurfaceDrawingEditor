@@ -36,13 +36,13 @@ public struct DrawingEditorView: View {
     }
 
     public var body: some View {
-        ZStack {
-            Color.clear.ignoresSafeArea()
+        //ZStack {
+            //Color.clear.ignoresSafeArea()
             VStack(spacing: FigmaLayoutScaler.scaleHeight(24)) {
                 canvas
                 toolbar
             }
-        }
+        //}
         .preferredColorScheme(.light)
         .onAppear {
             FontRegistrar.registerIfNeeded()
