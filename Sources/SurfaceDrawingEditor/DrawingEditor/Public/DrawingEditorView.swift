@@ -53,7 +53,11 @@ public struct DrawingEditorView: View {
     // MARK: - Canvas
 
     private var canvas: some View {
-        ZoomableDrawingContainer(
+        let aspect = image.size.width / image.size.height
+        let width = UIScreen.main.bounds.width
+        let height = width / aspect
+        
+        return ZoomableDrawingContainer(
             image: image,
             overlayImage: vm.autoOverlayImage,
             strokes: vm.strokes,
@@ -82,6 +86,7 @@ public struct DrawingEditorView: View {
             },
             zoomController: zoomController
         )
+        .frame(height: height)
         .clipped()
         .overlay {
             if vm.isProcessing || vm.isRenderingOverlay {
