@@ -301,13 +301,11 @@ final class _ZoomableDrawingVC: UIViewController {
         let contentWidth = containerWidth
         let contentHeight = containerWidth / aspect
 
-        // scrollView занимает всю drawing area
         scrollViewWidthConstraint?.constant = containerWidth
         scrollViewHeightConstraint?.constant = containerHeight
         
         view.layoutIfNeeded()
 
-        // реальный размер картинки
         contentView.frame = CGRect(
             x: 0,
             y: 0,
@@ -326,16 +324,6 @@ final class _ZoomableDrawingVC: UIViewController {
         )
 
         onCanvasSizeKnown?(drawingView.canvasSize)
-
-        // --- // --- ///
-        let scaleX = containerWidth / contentWidth
-        let scaleY = containerHeight / contentHeight
-        let minScale = min(scaleX, scaleY)
-
-        scrollView.minimumZoomScale = minScale
-        scrollView.maximumZoomScale = minScale * 4
-
-        scrollView.zoomScale = minScale
 
         centerContent()
     }
