@@ -227,7 +227,7 @@ final class _ZoomableDrawingVC: UIViewController {
         scrollView.addSubview(contentView)
         
         //        imageView.backgroundColor = .clear
-        imageView.contentMode     = .scaleAspectFit
+        imageView.contentMode     = .scaleAspectFill
         imageView.clipsToBounds   = true
         imageView.backgroundColor = .clear
         imageView.translatesAutoresizingMaskIntoConstraints = false
