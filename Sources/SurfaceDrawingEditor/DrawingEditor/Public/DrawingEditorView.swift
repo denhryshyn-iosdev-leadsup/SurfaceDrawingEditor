@@ -40,6 +40,7 @@ public struct DrawingEditorView: View {
             Color.clear.ignoresSafeArea()
             VStack(spacing: FigmaLayoutScaler.scaleHeight(24)) {
                 canvas
+                Spacer(minLength: 0)
                 toolbar
             }
         }
@@ -82,7 +83,6 @@ public struct DrawingEditorView: View {
             },
             zoomController: zoomController
         )
-        .aspectRatio(image.size.width / image.size.height, contentMode: .fit)
         .clipped()
         .overlay {
             if vm.isProcessing || vm.isRenderingOverlay {
