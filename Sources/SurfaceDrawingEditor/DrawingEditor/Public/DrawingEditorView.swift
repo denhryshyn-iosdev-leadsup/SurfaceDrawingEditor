@@ -76,6 +76,7 @@ public struct DrawingEditorView: View {
             },
             onCanvasSizeKnown: { size in
                 canvasSize = size
+                canvasHeight = size.height
                 vm.updateCanvasSize(size)
             },
             onContentFrameChanged: { contentFrame = $0 },
