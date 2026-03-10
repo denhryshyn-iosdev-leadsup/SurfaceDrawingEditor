@@ -212,10 +212,8 @@ final class _ZoomableDrawingVC: UIViewController {
         
         setupZoomButtons()
         
-        //scrollView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        //scrollView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
         scrollView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        scrollView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        scrollView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
         scrollViewWidthConstraint  = scrollView.widthAnchor.constraint(equalToConstant: 100)
         scrollViewHeightConstraint = scrollView.heightAnchor.constraint(equalToConstant: 100)
         scrollViewWidthConstraint?.isActive  = true
@@ -228,9 +226,8 @@ final class _ZoomableDrawingVC: UIViewController {
         contentView.layer.masksToBounds = true
         scrollView.addSubview(contentView)
         
-        //        imageView.contentMode     = .scaleAspectFit
         //        imageView.backgroundColor = .clear
-        imageView.contentMode     = .scaleAspectFill
+        imageView.contentMode     = .scaleAspectFit
         imageView.clipsToBounds   = true
         imageView.backgroundColor = .clear
         imageView.translatesAutoresizingMaskIntoConstraints = false
