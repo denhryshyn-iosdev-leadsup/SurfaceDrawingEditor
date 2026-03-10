@@ -213,7 +213,7 @@ final class _ZoomableDrawingVC: UIViewController {
         
         scrollView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         scrollView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-        scrollView.bottomAnchor.constraint(lessThanOrEqualTo: view.bottomAnchor).isActive = true
+        scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         scrollViewWidthConstraint  = scrollView.widthAnchor.constraint(equalToConstant: 100)
         scrollViewHeightConstraint = scrollView.heightAnchor.constraint(equalToConstant: 100)
         scrollViewWidthConstraint?.isActive  = true
