@@ -104,7 +104,7 @@ private struct _ZoomableDrawingRepresentable: UIViewControllerRepresentable {
     func sizeThatFits(_ proposal: ProposedViewSize, uiViewController: _ZoomableDrawingVC, context: Context) -> CGSize? {
         guard let width = proposal.width, width > 0 else { return nil }
         let ia = image.size.width / image.size.height
-        let height = width / ia
+        let height = min(width / ia, proposal.height ?? .infinity)
         return CGSize(width: width, height: height)
     }
 }
@@ -258,10 +258,10 @@ final class _ZoomableDrawingVC: UIViewController {
         //        let cW: CGFloat, cH: CGFloat
         //        if ia > va { cW = vW; cH = vW / ia } else { cH = vH; cW = vH * ia }
         guard let img = imageView.image, view.bounds.width > 0 else { return }
-        let vW = view.bounds.width
+        let vW = view.bounds.width, vH = view.bounds.height
         let ia = img.size.width / img.size.height
         let cW = vW
-        let cH = vW / ia
+        let cH = min(vW / ia, vH)
         
         scrollViewWidthConstraint?.constant  = cW
         scrollViewHeightConstraint?.constant = cH
