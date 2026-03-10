@@ -250,44 +250,103 @@ final class _ZoomableDrawingVC: UIViewController {
         ])
     }
     
+//    private func updateContentSize() {
+//        //        guard let img = imageView.image, view.bounds.width > 0 else { return }
+//        //        let vW = view.bounds.width, vH = view.bounds.height
+//        //        let ia = img.size.width / img.size.height
+//        //        let va = vW / vH
+//        //        let cW: CGFloat, cH: CGFloat
+//        //        if ia > va { cW = vW; cH = vW / ia } else { cH = vH; cW = vH * ia }
+//        guard let img = imageView.image, view.bounds.width > 0 else { return }
+//        let vW = view.bounds.width, vH = view.bounds.height
+//        let ia = img.size.width / img.size.height
+//        let cW = vW
+//        let cH = min(vW / ia, vH)
+//        
+//        scrollViewWidthConstraint?.constant  = cW
+//        scrollViewHeightConstraint?.constant = cH
+//        view.layoutIfNeeded()
+//
+//        contentView.frame      = CGRect(x: 0, y: 0, width: cW, height: cH)
+//        scrollView.contentSize = CGSize(width: cW, height: cH)
+//        centerContent()
+//
+//        let sz = CGSize(width: cW, height: cH)
+//        drawingView.canvasSize = sz
+//        onCanvasSizeKnown?(sz)
+//    }
+
+//    private func centerContent() {
+//        //        let ox = max((scrollView.bounds.width  - scrollView.contentSize.width)  / 2, 0)
+//        //        let oy = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, 0)
+//        //        scrollView.contentInset = UIEdgeInsets(top: oy, left: ox, bottom: oy, right: ox)
+//        let ox = max((scrollView.bounds.width  - scrollView.contentSize.width)  / 2, 0)
+//        scrollView.contentInset = UIEdgeInsets(top: 0, left: ox, bottom: 0, right: ox)
+//        let cW = scrollView.contentSize.width
+//        let cH = scrollView.contentSize.height
+//        if cW > 0, cH > 0 {
+//            //onContentFrameChanged?(CGRect(x: ox, y: oy, width: cW, height: cH))
+//            onContentFrameChanged?(CGRect(x: ox, y: 0, width: cW, height: cH))
+//        }
+//    }
+    
     private func updateContentSize() {
-        //        guard let img = imageView.image, view.bounds.width > 0 else { return }
-        //        let vW = view.bounds.width, vH = view.bounds.height
-        //        let ia = img.size.width / img.size.height
-        //        let va = vW / vH
-        //        let cW: CGFloat, cH: CGFloat
-        //        if ia > va { cW = vW; cH = vW / ia } else { cH = vH; cW = vH * ia }
         guard let img = imageView.image, view.bounds.width > 0 else { return }
-        let vW = view.bounds.width, vH = view.bounds.height
-        let ia = img.size.width / img.size.height
-        let cW = vW
-        let cH = vW / ia
+
+        let containerWidth = view.bounds.width
+        let containerHeight = view.bounds.height
         
-        scrollViewWidthConstraint?.constant  = cW
-        scrollViewHeightConstraint?.constant = cH
+        let aspect = img.size.width / img.size.height
+        
+        let contentWidth = containerWidth
+        let contentHeight = containerWidth / aspect
+
+        scrollViewWidthConstraint?.constant = containerWidth
+        scrollViewHeightConstraint?.constant = containerHeight
+        
         view.layoutIfNeeded()
 
-        contentView.frame      = CGRect(x: 0, y: 0, width: cW, height: cH)
-        scrollView.contentSize = CGSize(width: cW, height: cH)
+        contentView.frame = CGRect(
+            x: 0,
+            y: 0,
+            width: contentWidth,
+            height: contentHeight
+        )
+
+        scrollView.contentSize = CGSize(
+            width: contentWidth,
+            height: contentHeight
+        )
+
+        drawingView.canvasSize = CGSize(
+            width: contentWidth,
+            height: contentHeight
+        )
+
+        onCanvasSizeKnown?(drawingView.canvasSize)
+
         centerContent()
-
-        let sz = CGSize(width: cW, height: cH)
-        drawingView.canvasSize = sz
-        onCanvasSizeKnown?(sz)
     }
-
+    
     private func centerContent() {
-        //        let ox = max((scrollView.bounds.width  - scrollView.contentSize.width)  / 2, 0)
-        //        let oy = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, 0)
-        //        scrollView.contentInset = UIEdgeInsets(top: oy, left: ox, bottom: oy, right: ox)
-        let ox = max((scrollView.bounds.width  - scrollView.contentSize.width)  / 2, 0)
-        scrollView.contentInset = UIEdgeInsets(top: 0, left: ox, bottom: 0, right: ox)
-        let cW = scrollView.contentSize.width
-        let cH = scrollView.contentSize.height
-        if cW > 0, cH > 0 {
-            //onContentFrameChanged?(CGRect(x: ox, y: oy, width: cW, height: cH))
-            onContentFrameChanged?(CGRect(x: ox, y: 0, width: cW, height: cH))
-        }
+        let scrollSize = scrollView.bounds.size
+        let contentSize = scrollView.contentSize
+
+        let offsetX = max((scrollSize.width - contentSize.width) / 2, 0)
+
+        scrollView.contentInset = UIEdgeInsets(
+            top: 0,
+            left: offsetX,
+            bottom: 0,
+            right: offsetX
+        )
+
+        onContentFrameChanged?(CGRect(
+            x: offsetX,
+            y: 0,
+            width: contentSize.width,
+            height: contentSize.height
+        ))
     }
 
     private func setupDrawingGesture() {
