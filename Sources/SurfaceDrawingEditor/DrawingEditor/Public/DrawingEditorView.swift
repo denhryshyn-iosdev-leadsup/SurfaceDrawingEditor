@@ -34,13 +34,20 @@ public struct DrawingEditorView: View {
         self.onHasEditsChanged = onHasEditsChanged
         self.onDismiss = onDismiss
     }
+    
+    private var imageAspect: CGFloat {
+        image.size.width / image.size.height
+    }
 
     public var body: some View {
         ZStack {
             //Color.clear.ignoresSafeArea()
             VStack(spacing: FigmaLayoutScaler.scaleHeight(24)) {
                 canvas
-                    .aspectRatio(image.size.width / image.size.height, contentMode: .fit)
+                    .aspectRatio(
+                        imageAspect,
+                        contentMode: imageAspect >= 1 ? .fit : .fill
+                    )
                 toolbar
             }
         }
