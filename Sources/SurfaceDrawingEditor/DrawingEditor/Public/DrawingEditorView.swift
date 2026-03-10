@@ -43,11 +43,12 @@ public struct DrawingEditorView: View {
         ZStack {
             //Color.clear.ignoresSafeArea()
             VStack(spacing: FigmaLayoutScaler.scaleHeight(24)) {
-                canvas
-                    .aspectRatio(
-                        imageAspect,
-                        contentMode: imageAspect >= 1 ? .fit : .fill
-                    )
+                if imageAspect >= 1 {
+                    canvas
+                        .aspectRatio(imageAspect, contentMode: .fit)
+                } else {
+                    canvas
+                }
                 toolbar
             }
         }
