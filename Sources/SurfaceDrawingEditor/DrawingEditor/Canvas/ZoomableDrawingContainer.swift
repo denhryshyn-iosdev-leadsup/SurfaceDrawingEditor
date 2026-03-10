@@ -261,7 +261,7 @@ final class _ZoomableDrawingVC: UIViewController {
         let vW = view.bounds.width, vH = view.bounds.height
         let ia = img.size.width / img.size.height
         let cW = vW
-        let cH = min(vW / ia, vH)
+        let cH = vW / ia
         
         scrollViewWidthConstraint?.constant  = cW
         scrollViewHeightConstraint?.constant = cH
