@@ -101,7 +101,7 @@ public struct DrawingEditorView: View {
                         .tint(.white)
                         .scaleEffect(1.2)
                 }
-                .frame(width: contentFrame.width, height: contentFrame.height)
+                .frame(width: image.size.width, height: image.size.height)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
             }
         }
