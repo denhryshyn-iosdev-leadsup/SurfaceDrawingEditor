@@ -13,9 +13,9 @@ public final class DrawingEditorViewModel: ObservableObject {
     
     // MARK: State
     
-    @Published public var isProcessing    = false
+    @Published public var isProcessing = false
     @Published public var processingStatus = ""
-    @Published public var errorMessage:   String?
+    @Published public var isAreaDetected: Bool? = nil
     
     @Published public var autoOverlayImage:    UIImage?
     @Published public var autoDetectedSurface: DetectedSurface?
@@ -71,24 +71,25 @@ public final class DrawingEditorViewModel: ObservableObject {
     public func runAutoDetect(image: UIImage, type: SurfaceType) async {
         isProcessing = true
         processingStatus = "Analyzing..."
-        errorMessage = nil
+        isAreaDetected = nil
         autoDetectedSurface = nil
         autoOverlayImage = nil
         defer { isProcessing = false }
         
-        guard let det = detector else { errorMessage = "Model not loaded"; return }
+        guard let det = detector else { isAreaDetected = false; return }
         
         do {
             let normalized = image.normalizedImage()
             let surfaces   = try await det.detect(image: normalized)
             if let matched = surfaces.first(where: { $0.type == type }) {
                 autoDetectedSurface = matched
+                isAreaDetected = true
                 if !lastCanvasSize.isEmpty { buildAutoOverlay(canvasSize: lastCanvasSize) }
             } else {
-                errorMessage = "\(type.displayName) not detected — draw manually"
+                isAreaDetected = false
             }
         } catch {
-            errorMessage = error.localizedDescription
+            isAreaDetected = false
         }
     }
     
@@ -164,7 +165,7 @@ public final class DrawingEditorViewModel: ObservableObject {
             guard let data = finalImage.jpegData(compressionQuality: 0.9) else { return nil }
             return DrawingResult(image: finalImage, imageData: data)
         } catch {
-            errorMessage = "Compression failed: \(error.localizedDescription)"
+            isAreaDetected = false
             return nil
         }
     }

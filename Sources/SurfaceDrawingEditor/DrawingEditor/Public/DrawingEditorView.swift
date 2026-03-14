@@ -130,7 +130,6 @@ public struct DrawingEditorView: View {
 
     private var toolbarContent: some View {
         VStack(spacing: FigmaLayoutScaler.scaleHeight(14)) {
-            if let err = vm.errorMessage { errorBanner(err) }
             
             HStack {
                 HStack(spacing: FigmaLayoutScaler.scaleWidth(10)) {
@@ -177,15 +176,6 @@ public struct DrawingEditorView: View {
             )
         }
         .padding(.bottom, FigmaLayoutScaler.scaleHeight(4))
-    }
-
-    private func errorBanner(_ text: String) -> some View {
-        HStack(spacing: FigmaLayoutScaler.scaleWidth(8)) {
-            Image(systemName: "info.circle").foregroundStyle(.orange)
-            Text(text).appFont(.regular, 13).foregroundStyle(.secondary)
-            Spacer()
-        }
-        .padding(.top, FigmaLayoutScaler.scaleHeight(4))
     }
     
     // MARK: - Tool Buttons
