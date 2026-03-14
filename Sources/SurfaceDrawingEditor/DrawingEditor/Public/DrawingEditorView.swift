@@ -48,6 +48,8 @@ public struct DrawingEditorView: View {
                         .aspectRatio(imageAspect, contentMode: .fit)
                 } else {
                     canvas
+                        .aspectRatio(imageAspect, contentMode: .fit)
+                        .frame(maxHeight: .infinity, alignment: .top)
                 }
                 toolbar
             }
@@ -101,7 +103,7 @@ public struct DrawingEditorView: View {
                         .tint(.white)
                         .scaleEffect(1.2)
                 }
-                .frame(width: image.size.width, height: image.size.height)
+                .frame(width: contentFrame.width, height: contentFrame.height)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
             }
         }
