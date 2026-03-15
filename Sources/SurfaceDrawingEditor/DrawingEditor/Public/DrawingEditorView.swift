@@ -49,7 +49,7 @@ public struct DrawingEditorView: View {
                 } else {
                     canvas
                         .frame(maxWidth: .infinity)
-                        .clipped()
+                        .clipShape(.rect(cornerRadius: 20))
                 }
                 toolbar
             }
