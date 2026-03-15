@@ -48,8 +48,8 @@ public struct DrawingEditorView: View {
                         .aspectRatio(imageAspect, contentMode: .fit)
                 } else {
                     canvas
-                        .aspectRatio(imageAspect, contentMode: .fit)
-                        .frame(maxHeight: .infinity, alignment: .top)
+                        .frame(maxWidth: .infinity)
+                        .clipped()
                 }
                 toolbar
             }
