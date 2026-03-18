@@ -94,19 +94,6 @@ public struct DrawingEditorView: View {
             zoomController: zoomController
         )
         .clipped()
-        .overlay {
-            if vm.isProcessing || vm.isRenderingOverlay {
-                ZStack {
-                    Color.black.opacity(0.15)
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .tint(.white)
-                        .scaleEffect(1.2)
-                }
-                .frame(width: contentFrame.width, height: contentFrame.height)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-            }
-        }
         .onChange(of: vm.hasEdits) { _, newValue in
             onHasEditsChanged?(newValue)
         }
