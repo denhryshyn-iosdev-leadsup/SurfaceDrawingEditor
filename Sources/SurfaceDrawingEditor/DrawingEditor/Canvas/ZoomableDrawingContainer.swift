@@ -101,11 +101,11 @@ private struct _ZoomableDrawingRepresentable: UIViewControllerRepresentable {
         )
     }
     
-//    func sizeThatFits(_ proposal: ProposedViewSize, uiViewController: _ZoomableDrawingVC, context: Context) -> CGSize? {
-//        guard let width = proposal.width, width > 0 else { return nil }
-//        let aspect = image.size.width / image.size.height
-//        return CGSize(width: width, height: width / aspect)
-//    }
+    func sizeThatFits(_ proposal: ProposedViewSize, uiViewController: _ZoomableDrawingVC, context: Context) -> CGSize? {
+        guard let width = proposal.width, width > 0 else { return nil }
+        let aspect = image.size.width / image.size.height
+        return CGSize(width: width, height: width / aspect)
+    }
 }
 
 // MARK: - ViewController
