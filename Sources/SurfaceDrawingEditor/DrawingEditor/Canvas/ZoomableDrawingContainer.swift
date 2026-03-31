@@ -470,15 +470,69 @@ final class _DrawingCanvasUIView: UIView {
         return false
     }
 
+//    override func draw(_ rect: CGRect) {
+//        guard let ctx = UIGraphicsGetCurrentContext() else { return }
+//        ctx.clear(rect)
+//        overlayImage?.draw(in: bounds)
+//        drawStrokesFlat(in: ctx)
+//        if currentStroke.count > 1 { drawLiveStroke(in: ctx) }
+//    }
+//    
+//    private func drawStrokesFlat(in ctx: CGContext) {
+//        guard !strokes.isEmpty else { return }
+//        let sz = bounds.size
+//        guard let off = CGContext(
+//            data: nil, width: Int(sz.width), height: Int(sz.height),
+//            bitsPerComponent: 8, bytesPerRow: Int(sz.width) * 4,
+//            space: CGColorSpaceCreateDeviceRGB(),
+//            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+//        ) else { return }
+//        
+//        let brushAlpha = brushColor.cgColor.alpha
+//        
+//        for stroke in strokes {
+//            guard stroke.points.count > 1 else { continue }
+//            if stroke.tool == .eraser {
+//                off.saveGState()
+//                off.setBlendMode(.clear)
+//                off.setStrokeColor(UIColor.white.cgColor)
+//                off.setLineWidth(stroke.brushWidth)
+//                off.setLineCap(.round); off.setLineJoin(.round)
+//                off.move(to: stroke.points[0])
+//                stroke.points.dropFirst().forEach { off.addLine(to: $0) }
+//                off.strokePath()
+//                off.restoreGState()
+//            } else {
+//                off.setStrokeColor(stroke.color.withAlphaComponent(1.0).cgColor)
+//                off.setLineWidth(stroke.brushWidth)
+//                off.setLineCap(.round); off.setLineJoin(.round)
+//                off.move(to: stroke.points[0])
+//                stroke.points.dropFirst().forEach { off.addLine(to: $0) }
+//                off.strokePath()
+//            }
+//        }
+//        
+//        if let img = off.makeImage() {
+//            ctx.saveGState()
+//            ctx.setAlpha(brushAlpha)
+//            ctx.draw(img, in: bounds)
+//            ctx.restoreGState()
+//        }
+//    }
+    
     override func draw(_ rect: CGRect) {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
         ctx.clear(rect)
-        //overlayImage?.draw(in: bounds)
+        overlayImage?.draw(in: bounds)
         drawStrokesFlat(in: ctx)
+        drawEraserOnOverlay(in: ctx)
         if currentStroke.count > 1 { drawLiveStroke(in: ctx) }
     }
-    
+
     private func drawStrokesFlat(in ctx: CGContext) {
+        let brushStrokes = strokes.filter { $0.tool == .brush }
+        guard !brushStrokes.isEmpty else { return }
+
         let sz = bounds.size
         guard let off = CGContext(
             data: nil, width: Int(sz.width), height: Int(sz.height),
@@ -486,46 +540,43 @@ final class _DrawingCanvasUIView: UIView {
             space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else { return }
-        
+
         let brushAlpha = brushColor.cgColor.alpha
-        
-        if let overlay = overlayImage {
-            off.saveGState()
-            off.setAlpha(1.0)
-            if let cg = overlay.cgImage {
-                off.draw(cg, in: CGRect(origin: .zero, size: sz))
-            }
-            off.restoreGState()
-        }
-        
-        for stroke in strokes {
+
+        for stroke in brushStrokes {
             guard stroke.points.count > 1 else { continue }
-            if stroke.tool == .eraser {
-                off.saveGState()
-                off.setBlendMode(.clear)
-                off.setStrokeColor(UIColor.white.cgColor)
-                off.setLineWidth(stroke.brushWidth)
-                off.setLineCap(.round); off.setLineJoin(.round)
-                off.move(to: stroke.points[0])
-                stroke.points.dropFirst().forEach { off.addLine(to: $0) }
-                off.strokePath()
-                off.restoreGState()
-            } else {
-                off.setStrokeColor(stroke.color.withAlphaComponent(1.0).cgColor)
-                off.setLineWidth(stroke.brushWidth)
-                off.setLineCap(.round); off.setLineJoin(.round)
-                off.move(to: stroke.points[0])
-                stroke.points.dropFirst().forEach { off.addLine(to: $0) }
-                off.strokePath()
-            }
+            off.setStrokeColor(stroke.color.withAlphaComponent(1.0).cgColor)
+            off.setLineWidth(stroke.brushWidth)
+            off.setLineCap(.round); off.setLineJoin(.round)
+            off.move(to: stroke.points[0])
+            stroke.points.dropFirst().forEach { off.addLine(to: $0) }
+            off.strokePath()
         }
-        
+
         if let img = off.makeImage() {
             ctx.saveGState()
             ctx.setAlpha(brushAlpha)
             ctx.draw(img, in: bounds)
             ctx.restoreGState()
         }
+    }
+
+    private func drawEraserOnOverlay(in ctx: CGContext) {
+        let eraserStrokes = strokes.filter { $0.tool == .eraser }
+        guard !eraserStrokes.isEmpty else { return }
+
+        ctx.saveGState()
+        ctx.setBlendMode(.clear)
+        for stroke in eraserStrokes {
+            guard stroke.points.count > 1 else { continue }
+            ctx.setStrokeColor(UIColor.white.cgColor)
+            ctx.setLineWidth(stroke.brushWidth)
+            ctx.setLineCap(.round); ctx.setLineJoin(.round)
+            ctx.move(to: stroke.points[0])
+            stroke.points.dropFirst().forEach { ctx.addLine(to: $0) }
+            ctx.strokePath()
+        }
+        ctx.restoreGState()
     }
 
     private func drawStroke(_ stroke: DrawingStroke, in ctx: CGContext) {
