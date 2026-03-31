@@ -556,6 +556,7 @@ final class _DrawingCanvasUIView: UIView {
         if let img = off.makeImage() {
             ctx.saveGState()
             ctx.setAlpha(brushAlpha)
+            ctx.setBlendMode(.sourceAtop)
             ctx.draw(img, in: bounds)
             ctx.restoreGState()
         }
