@@ -70,7 +70,7 @@ public struct DrawingEditorView: View {
             strokes: vm.strokes,
             currentStroke: currentStroke,
             currentTool: vm.currentTool,
-            brushColor: vm.brushColor,
+            brushColor: vm.brushDisplayColor,
             currentWidth: vm.currentWidth,
             onStrokePoint: { currentStroke.append($0) },
             onStrokeEnd: {
@@ -79,7 +79,7 @@ public struct DrawingEditorView: View {
                     points: currentStroke,
                     tool: vm.currentTool,
                     brushWidth: vm.currentWidth,
-                    color: vm.brushColor
+                    color: vm.brushDisplayColor
                 ))
                 currentStroke = []
             },

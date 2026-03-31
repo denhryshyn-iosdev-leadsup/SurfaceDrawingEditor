@@ -38,7 +38,8 @@ public final class DrawingEditorViewModel: ObservableObject {
     public var canRedo: Bool  { !redoStack.isEmpty }
     public var hasEdits: Bool { _hasEdits }
     
-    public let brushColor = UIColor(red: 190/255, green: 190/255, blue: 190/255, alpha: 1)
+    public let brushDisplayColor = DrawingDesign.brushDisplayColor
+    public let brushRenderColor  = DrawingDesign.brushRenderColor
     
     public let mode: DrawingEditorMode
     
@@ -151,10 +152,19 @@ public final class DrawingEditorViewModel: ObservableObject {
         defer { isProcessing = false }
         
         // 1. Рисуем overlay поверх оригинала
+        let renderStrokes = strokes.map { stroke in
+            DrawingStroke(
+                points: stroke.points,
+                tool: stroke.tool,
+                brushWidth: stroke.brushWidth,
+                color: stroke.tool == .brush ? brushRenderColor : stroke.color
+            )
+        }
+        
         let composite = CompositeRenderer.render(
             original: originalImage,
             autoSurface: autoDetectedSurface,
-            strokes: strokes,
+            strokes: renderStrokes,
             canvasSize: canvasSize
         )
         

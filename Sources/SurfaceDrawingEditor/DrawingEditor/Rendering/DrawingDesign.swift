@@ -14,4 +14,7 @@ enum DrawingDesign {
     static let accentSwiftUI = Color(hex: "#FFBB00")
     static let brushColor = Color(hex: "#BEBEBE")
     static let eraserCursorColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 0.7)
+    
+    static let brushDisplayColor = UIColor(red: 0xEB/255, green: 0x15/255, blue: 0x15/255, alpha: 0.4)
+    static let brushRenderColor = UIColor(red: 190/255, green: 190/255, blue: 190/255, alpha: 1)
 }
