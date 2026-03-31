@@ -78,7 +78,7 @@ enum CompositeRenderer {
 
         ctx.clear(CGRect(x: 0, y: 0, width: W, height: H))
         ctx.clip(to: CGRect(x: 0, y: 0, width: W, height: H), mask: maskCG)
-        ctx.setFillColor(DrawingDesign.brushDisplayColor.cgColor)
+        ctx.setFillColor(DrawingDesign.brushDisplayColor.withAlphaComponent(1.0).cgColor)
         ctx.fill(CGRect(x: 0, y: 0, width: W, height: H))
 
         guard let cg = ctx.makeImage() else { return nil }

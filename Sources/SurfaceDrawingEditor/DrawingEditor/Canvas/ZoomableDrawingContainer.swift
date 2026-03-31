@@ -387,7 +387,7 @@ final class _DrawingCanvasUIView: UIView {
     var strokes:       [DrawingStroke] = []
     var currentStroke: [CGPoint] = []
     var currentTool:   DrawingTool = .brush
-    var brushColor:    UIColor = UIColor(red: 1, green: 0, blue: 0, alpha: 0.4)
+    var brushColor:    UIColor = UIColor(red: 0xEB/255, green: 0x15/255, blue: 0x15/255, alpha: 0.4)
     var currentWidth:  CGFloat = 40
     var canvasSize:    CGSize  = .zero
 
