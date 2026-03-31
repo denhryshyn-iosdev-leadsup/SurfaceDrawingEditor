@@ -58,6 +58,18 @@ public struct DrawingEditorView: View {
         .onAppear {
             FontRegistrar.registerIfNeeded()
             startIfNeeded()
+            
+            // DEBUG: через 10 сек сохраняем финальную картинку в галерею
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                Task {
+                    guard let result = await vm.buildResult(
+                        originalImage: image,
+                        canvasSize: canvasSize
+                    ) else { return }
+                    UIImageWriteToSavedPhotosAlbum(result.image, nil, nil, nil)
+                    print("✅ DEBUG: result image saved to Photos")
+                }
+            }
         }
     }
 

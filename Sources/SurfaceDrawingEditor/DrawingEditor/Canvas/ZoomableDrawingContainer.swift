@@ -474,8 +474,50 @@ final class _DrawingCanvasUIView: UIView {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
         ctx.clear(rect)
         overlayImage?.draw(in: bounds)
-        strokes.forEach { drawStroke($0, in: ctx) }
+        drawStrokesFlat(in: ctx)
         if currentStroke.count > 1 { drawLiveStroke(in: ctx) }
+    }
+    
+    private func drawStrokesFlat(in ctx: CGContext) {
+        guard !strokes.isEmpty else { return }
+        let sz = bounds.size
+        guard let off = CGContext(
+            data: nil, width: Int(sz.width), height: Int(sz.height),
+            bitsPerComponent: 8, bytesPerRow: Int(sz.width) * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return }
+        
+        let brushAlpha = brushColor.cgColor.alpha
+        
+        for stroke in strokes {
+            guard stroke.points.count > 1 else { continue }
+            if stroke.tool == .eraser {
+                off.saveGState()
+                off.setBlendMode(.clear)
+                off.setStrokeColor(UIColor.white.cgColor)
+                off.setLineWidth(stroke.brushWidth)
+                off.setLineCap(.round); off.setLineJoin(.round)
+                off.move(to: stroke.points[0])
+                stroke.points.dropFirst().forEach { off.addLine(to: $0) }
+                off.strokePath()
+                off.restoreGState()
+            } else {
+                off.setStrokeColor(stroke.color.withAlphaComponent(1.0).cgColor)
+                off.setLineWidth(stroke.brushWidth)
+                off.setLineCap(.round); off.setLineJoin(.round)
+                off.move(to: stroke.points[0])
+                stroke.points.dropFirst().forEach { off.addLine(to: $0) }
+                off.strokePath()
+            }
+        }
+        
+        if let img = off.makeImage() {
+            ctx.saveGState()
+            ctx.setAlpha(brushAlpha)
+            ctx.draw(img, in: bounds)
+            ctx.restoreGState()
+        }
     }
 
     private func drawStroke(_ stroke: DrawingStroke, in ctx: CGContext) {
