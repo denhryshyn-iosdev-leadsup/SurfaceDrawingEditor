@@ -473,13 +473,12 @@ final class _DrawingCanvasUIView: UIView {
     override func draw(_ rect: CGRect) {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
         ctx.clear(rect)
-        overlayImage?.draw(in: bounds)
+        //overlayImage?.draw(in: bounds)
         drawStrokesFlat(in: ctx)
         if currentStroke.count > 1 { drawLiveStroke(in: ctx) }
     }
     
     private func drawStrokesFlat(in ctx: CGContext) {
-        guard !strokes.isEmpty else { return }
         let sz = bounds.size
         guard let off = CGContext(
             data: nil, width: Int(sz.width), height: Int(sz.height),
@@ -489,6 +488,15 @@ final class _DrawingCanvasUIView: UIView {
         ) else { return }
         
         let brushAlpha = brushColor.cgColor.alpha
+        
+        if let overlay = overlayImage {
+            off.saveGState()
+            off.setAlpha(1.0)
+            if let cg = overlay.cgImage {
+                off.draw(cg, in: CGRect(origin: .zero, size: sz))
+            }
+            off.restoreGState()
+        }
         
         for stroke in strokes {
             guard stroke.points.count > 1 else { continue }
