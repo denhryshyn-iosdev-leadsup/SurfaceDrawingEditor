@@ -116,13 +116,23 @@ public struct DrawingEditorView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, FigmaLayoutScaler.scaleHeight(20))
     }
+    
+    private var toolButtonsDivider: some View {
+        Rectangle()
+            .fill(Color(hex: "#1E1E1E").opacity(0.2))
+            .frame(
+                width: 1,
+                height: FigmaLayoutScaler.scaleHeight(13)
+            )
+    }
 
     private var toolbarContent: some View {
         VStack(spacing: FigmaLayoutScaler.scaleHeight(14)) {
             
             HStack {
-                HStack(spacing: FigmaLayoutScaler.scaleWidth(10)) {
+                HStack(spacing: FigmaLayoutScaler.scaleWidth(8)) {
                     toolButton(.brush)
+                    toolButtonsDivider
                     toolButton(.eraser)
                 }
                 Spacer()
