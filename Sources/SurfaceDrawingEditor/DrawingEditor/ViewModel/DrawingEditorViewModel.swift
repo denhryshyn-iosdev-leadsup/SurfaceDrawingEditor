@@ -47,6 +47,8 @@ public final class DrawingEditorViewModel: ObservableObject {
     
     private var detector: WallFloorDetector?
     
+    private var hasRunAutoDetect = false
+    
     public init(mode: DrawingEditorMode = .manualOnly) {
         self.mode = mode
         if case .autoDetect = mode {
@@ -70,6 +72,8 @@ public final class DrawingEditorViewModel: ObservableObject {
     // MARK: - Auto Detect
     
     public func runAutoDetect(image: UIImage, type: SurfaceType) async {
+        guard !hasRunAutoDetect else { return } 
+        hasRunAutoDetect = true
         isProcessing = true
         processingStatus = "Analyzing..."
         isAreaDetected = nil
