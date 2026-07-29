@@ -406,7 +406,7 @@ final class _DrawingCanvasUIView: UIView {
         }
         if innerCursorLayer == nil {
             let inner = CAShapeLayer()
-            inner.fillColor = UIColor(white: 0.55, alpha: 1).cgColor
+            inner.fillColor = UIColor(hex: "#EDEDEF").cgColor
             inner.strokeColor = UIColor.clear.cgColor
             inner.zPosition = 101
             layer.addSublayer(inner)

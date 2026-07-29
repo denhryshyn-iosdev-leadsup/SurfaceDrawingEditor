@@ -29,7 +29,7 @@ struct BrushSlider: View {
 
                 // Track fill
                 Capsule()
-                    .fill(Color(hex: "#FFBB00"))
+                    .fill(Color(hex: "#1E1E1E"))
                     .frame(width: max(thumbX, thumbSize / 2), height: trackHeight)
 
                 // Thumb
@@ -45,7 +45,7 @@ struct BrushSlider: View {
                         )
 
                     Circle()
-                        .fill(Color(hex: "#FFBB00"))
+                        .fill(Color(hex: "#1E1E1E"))
                         .frame(width: innerSize, height: innerSize)
                 }
                 .offset(x: thumbX - thumbSize / 2)
