@@ -24,7 +24,7 @@ struct BrushSlider: View {
             ZStack(alignment: .leading) {
                 // Track background
                 Capsule()
-                    .fill(Color.white)
+                    .fill(Color(hex: "#F2F2F7"))
                     .frame(height: trackHeight)
 
                 // Track fill
